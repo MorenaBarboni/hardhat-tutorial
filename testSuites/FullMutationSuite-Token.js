@@ -62,6 +62,9 @@ describe("Token contract", function () {
             const { hardhatToken, owner } = await loadFixture(deployTokenFixture);
             const ownerBalance = await hardhatToken.balanceOf(owner.address);
             expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
+
+            // Verify that the total supply is equal to the expected total supply
+            expect(await hardhatToken.totalSupply()).to.equal(1000000);
         });
     });
 
@@ -76,12 +79,35 @@ describe("Token contract", function () {
                 hardhatToken.transfer(addr1.address, 30)
             ).to.changeTokenBalances(hardhatToken, [owner, addr1], [-30, 30]);
 
+            // Initialize addr2 with some tokens
+            await hardhatToken.transfer(addr2.address, 10); // Adjust the amount based on your needs
+
             // Transfer 50 tokens from addr1 to addr2
             // We use .connect(signer) to send a transaction from another account
             await expect(
                 hardhatToken.connect(addr1).transfer(addr2.address, 30)
             ).to.changeTokenBalances(hardhatToken, [addr1, addr2], [-30, 30]);
 
+            // Check that addr2 received the correct amount
+            const addr2Balance = await hardhatToken.balanceOf(addr2.address);
+            expect(addr2Balance).to.equal(40); // Adjust this based on your token's precision and amount
+        });
+
+        it("Should emit Transfer events", async function () {
+            const { hardhatToken, owner, addr1, addr2 } = await loadFixture(
+                deployTokenFixture
+            );
+
+            // Transfer 50 tokens from owner to addr1
+            await expect(hardhatToken.transfer(addr1.address, 50))
+                .to.emit(hardhatToken, "Transfer")
+                .withArgs(owner.address, addr1.address, 50);
+
+            // Transfer 50 tokens from addr1 to addr2
+            // We use .connect(signer) to send a transaction from another account
+            /*await expect(hardhatToken.connect(addr1).transfer(addr2.address, 50))
+              .to.emit(hardhatToken, "Transfer")
+              .withArgs(addr1.address, addr2.address, 50);*/
         });
 
         it("Should fail if sender doesn't have enough tokens", async function () {

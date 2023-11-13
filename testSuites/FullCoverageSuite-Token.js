@@ -55,7 +55,7 @@ describe("Token contract", function () {
 
             // This test expects the owner variable stored in the contract to be
             // equal to our Signer's owner.
-            expect(await hardhatToken.owner()).to.equal(owner.address);
+           expect(await hardhatToken.owner()).to.equal(owner.address);
         });
 
         it("Should assign the total supply of tokens to the owner", async function () {
