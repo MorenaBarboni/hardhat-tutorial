@@ -1,7 +1,13 @@
-/artifacts
-/cache
-/coverage
-/node_modules
-coverage.json
-sumo
+Token/artifacts
+Token/cache
+Token/coverage
+Token/node_modules
+Token/coverage.json
+Token/sumo
+CampusCoin/artifacts
+CampusCoin/cache
+CampusCoin/coverage
+CampusCoin/node_modules
+CampusCoin/coverage.json
+CampusCoin/sumo
 

@@ -1,6 +1,6 @@
 # HardHat Tutorial
 
-## Project Structure
+## Token Project Structure
 
 * `./contracts`: Default Contract Folder used by HardHat;
     * `Token.sol`: Smart Contract Under Test (SCUT)
@@ -19,3 +19,8 @@ Compile the contract with `npx hardhat compile`
 
 ## Testing the Smart Contract
 Run the test suite with `npx hardhat test`
+
+
+
+
+## CampusCoin Project Structure
