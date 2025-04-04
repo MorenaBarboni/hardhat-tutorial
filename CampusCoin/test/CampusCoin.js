@@ -44,6 +44,10 @@ describe("CampusCoin", function () {
       await expect(
         campusCoin.connect(student1).addStudent(student1.address)
       ).to.be.revertedWith("Only admin can call this");
+
+      await expect(
+        campusCoin.connect(student1).removeStudent(student1.address)
+      ).to.be.revertedWith("Only admin can call this");
     });
   });
 
