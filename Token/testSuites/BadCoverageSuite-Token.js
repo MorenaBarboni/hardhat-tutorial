@@ -19,13 +19,15 @@ describe("Token contract", function () {
   // ====================
   describe("Deployment", function () {
     /**
-     * Test to ensure that the total supply of tokens
-     * is assigned to the owner's balance after deployment.
+     * Test to ensure that the total supply of tokens is 1_000_000
      */
-    it("Should assign the total supply of tokens to the owner", async function () {
+    it("Should mint exactly 1,000,000 tokens on deployment", async function () {
       await deployToken();
-      const ownerBalance = await hardhatToken.balanceOf(owner.address);
-      expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
+      const totalSupply = await hardhatToken.totalSupply(); // actual supply
+      const expectedTotalSupply = 1_000_000n; // raw integer supply
+
+      expect(totalSupply).to.equal(expectedTotalSupply);
     });
+
   });
 });

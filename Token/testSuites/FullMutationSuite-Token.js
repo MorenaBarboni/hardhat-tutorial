@@ -1,25 +1,12 @@
-// This is an example test file. Hardhat will run every *.js file in `test/`,
-// so feel free to add new ones.
-
-// Hardhat tests are normally written with Mocha and Chai.
-
-// We import Chai to use its asserting functions here.
 const { expect } = require("chai");
 
 // We use `loadFixture` to share common setups (or fixtures) between tests.
-// Using this simplifies your tests and makes them run faster, by taking
+// Using this simplifies tests and makes them run faster, by taking
 // advantage of Hardhat Network's snapshot functionality.
 const {
     loadFixture,
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
-// `describe` is a Mocha function that allows you to organize your tests.
-// Having your tests organized makes debugging them easier. All Mocha
-// functions are available in the global scope.
-//
-// `describe` receives the name of a section of your test suite, and a
-// callback. The callback must define the tests of that section. This callback
-// can't be an async function.
 describe("Token contract", function () {
     // We define a fixture to reuse the same setup in every test. We use
     // loadFixture to run this setup once, snapshot that state, and reset Hardhat
@@ -39,25 +26,29 @@ describe("Token contract", function () {
         return { hardhatToken, owner, addr1, addr2 };
     }
 
-    // You can nest describe calls to create subsections.
+
     describe("Deployment", function () {
-        // `it` is another Mocha function. This is the one you use to define each
-        // of your tests. It receives the test name, and a callback function.
-        //
-        // If the callback function is async, Mocha will `await` it.
+
+        /**
+         * Test to ensure that the total supply of tokens is 1_000_000
+         */
+        it("Should mint exactly 1,000,000 tokens on deployment", async function () {
+            await deployToken();
+            const totalSupply = await hardhatToken.totalSupply(); // actual supply
+            const expectedTotalSupply = 1_000_000n; // raw integer supply
+
+            expect(totalSupply).to.equal(expectedTotalSupply);
+        });
+
         it("Should set the right owner", async function () {
-            // We use loadFixture to setup our environment, and then assert that
-            // things went well
             const { hardhatToken, owner } = await loadFixture(deployTokenFixture);
-
-            // `expect` receives a value and wraps it in an assertion object. These
-            // objects have a lot of utility methods to assert values.
-
-            // This test expects the owner variable stored in the contract to be
-            // equal to our Signer's owner.
             expect(await hardhatToken.owner()).to.equal(owner.address);
         });
 
+        /**
+         * Test to ensure that the total supply of tokens
+         * is assigned to the owner's balance after deployment.
+         */
         it("Should assign the total supply of tokens to the owner", async function () {
             const { hardhatToken, owner } = await loadFixture(deployTokenFixture);
             const ownerBalance = await hardhatToken.balanceOf(owner.address);

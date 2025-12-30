@@ -21,9 +21,10 @@ describe("Token contract", function () {
 
     it("Should mint exactly 1,000,000 tokens on deployment", async function () {
       await deployToken();
-
+      const totalSupply = await hardhatToken.totalSupply(); // actual supply
       const expectedTotalSupply = 1_000_000n; // raw integer supply
-      expect(await hardhatToken.totalSupply()).to.equal(expectedTotalSupply);
+      
+      expect(totalSupply).to.equal(expectedTotalSupply);
     });
 
     /**
