@@ -18,15 +18,12 @@ describe("Token contract", function () {
   // Deployment Tests
   // ====================
   describe("Deployment", function () {
-    /**
-     * Test to ensure that the contract's owner is set
-     * to the deployer address upon deployment.
-     */
-    it("Should set the right owner", async function () {
-      await deployToken();
-      const actual_owner = await hardhatToken.owner();
-      expect(actual_owner).to.equal(owner.address);
 
+    it("Should mint exactly 1,000,000 tokens on deployment", async function () {
+      await deployToken();
+
+      const expectedTotalSupply = 1_000_000n; // raw integer supply
+      expect(await hardhatToken.totalSupply()).to.equal(expectedTotalSupply);
     });
 
     /**
