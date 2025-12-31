@@ -33,8 +33,10 @@ describe("Token contract", function () {
      */
     it("Should assign the total supply of tokens to the owner", async function () {
       await deployToken();
-      const ownerBalance = await hardhatToken.balanceOf(owner.address);
-      expect(await hardhatToken.totalSupply()).to.equal(ownerBalance);
+      const ownerAddress = owner.address;
+      const ownerBalance = await hardhatToken.balanceOf(ownerAddress); //owner balance
+      const totalSupply = await hardhatToken.totalSupply(); // actual supply
+      expect(ownerBalance).to.equal(totalSupply);
     });
   });
 
