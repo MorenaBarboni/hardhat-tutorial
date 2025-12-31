@@ -19,13 +19,14 @@ describe("Token contract", function () {
   // Deployment Tests
   // ====================
   describe("Deployment", function () {
+
     /**
-     * Test to ensure that the total supply of tokens
-     * is assigned to the owner's balance after deployment.
-     */
-    it("Should assign the total supply of tokens to the owner", async function () {
-      // ...
+    * Test to ensure that the total supply of tokens is 1_000_000
+    */
+    it("Should mint exactly 1,000,000 tokens on deployment", async function () {
+     // write your test here ...
     });
+
   });
 
 });
