@@ -5,12 +5,15 @@ describe("Token contract", function () {
   let owner, addr1, addr2, hardhatToken;
 
   /**
-   * Helper function to deploy the Token contract
-   * and set up test signers.
-   */
+     * Helper function to deploy the Token contract
+     * and set up test signers.
+     */
   async function deployToken() {
-    // ...
+    [owner, addr1, addr2] = await ethers.getSigners();
+    hardhatToken = await ethers.deployContract("Token");
+    await hardhatToken.waitForDeployment();
   }
+
 
   // ====================
   // Deployment Tests
