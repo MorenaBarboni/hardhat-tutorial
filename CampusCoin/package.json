@@ -1,8 +1,9 @@
 {
-  "name": "hardhat-project",
+  "name": "CampusCoin",
+  "version": "1.0.0",
   "devDependencies": {
-    "hardhat": "2.22.15",
+   "hardhat": "^2.11.0",
     "@nomicfoundation/hardhat-toolbox": "5.0.0",
-    "@morenabarboni/sumo": "3.1.1"
+    "@morenabarboni/sumo": "3.2.1"
   }
 }
