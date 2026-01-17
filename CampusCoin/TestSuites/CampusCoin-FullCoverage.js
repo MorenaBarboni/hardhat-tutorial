@@ -3,10 +3,10 @@ const { ethers } = require("hardhat");
 
 describe("CampusCoin", function () {
   let campusCoin;
-  let admin, university, student1, student2, provider, attacker;
+  let admin, university, student1, student2, provider, spender;
 
   before(async () => {
-    [admin, university, student1, student2, provider, attacker] =
+    [admin, university, student1, student2, provider, spender] =
       await ethers.getSigners();
 
     const CampusCoin = await ethers.getContractFactory("CampusCoin");
@@ -96,8 +96,16 @@ describe("CampusCoin", function () {
       await campusCoin.addStudent(student1.address);
       await campusCoin.addStudent(student2.address);
 
-      // top up student1 for transfer tests; previous tests may have burned
+      // top up student1 for transfer tests
       await campusCoin.mint(student1.address, "100");
+    });
+
+    // Prep for transferFrom-related tests
+    beforeEach(async () => {
+      // Ensure spender has allowance from student1
+      // Also top up student1 so each test is independent.
+      await campusCoin.mint(student1.address, "20");
+      await campusCoin.connect(student1).approve(spender.address, "15");
     });
 
     it("Should transfer between students", async () => {
@@ -112,50 +120,30 @@ describe("CampusCoin", function () {
       ).to.be.revertedWith("Recipient must be a registered student");
     });
 
-    describe("transferFrom", () => {
-      beforeEach(async () => {
-        // Ensure spender (attacker here) has allowance from student1
-        // Also top up student1 so each test is independent.
-        await campusCoin.mint(student1.address, "20");
-        await campusCoin.connect(student1).approve(attacker.address, "15");
-      });
+    it("Should transferFrom to a registered student when approved (exact delta)", async () => {
+      const beforeFrom = await campusCoin.balanceOf(student1.address);
+      const beforeTo = await campusCoin.balanceOf(student2.address);
 
-      it("Should transferFrom to a registered student when approved", async () => {
-        await campusCoin
-          .connect(attacker)
-          .transferFrom(student1.address, student2.address, "10");
+      await campusCoin
+        .connect(spender)
+        .transferFrom(student1.address, student2.address, "10");
 
-        expect(await campusCoin.balanceOf(student2.address)).to.be.gte(0); // sanity
-        // Exact delta assertions:
-        // student2 started with at least 10 from earlier transfer; just check increment by 10
-        // Fetch balances after and assert change:
-        // (We avoid depending on earlier state by computing before/after.)
-      });
+      const afterFrom = await campusCoin.balanceOf(student1.address);
+      const afterTo = await campusCoin.balanceOf(student2.address);
 
-      it("Should transferFrom to a registered student when approved (exact delta)", async () => {
-        const beforeFrom = await campusCoin.balanceOf(student1.address);
-        const beforeTo = await campusCoin.balanceOf(student2.address);
+      expect(afterFrom).to.equal(beforeFrom - 10n);
+      expect(afterTo).to.equal(beforeTo + 10n);
+    });
 
-        await campusCoin
-          .connect(attacker)
-          .transferFrom(student1.address, student2.address, "10");
-
-        const afterFrom = await campusCoin.balanceOf(student1.address);
-        const afterTo = await campusCoin.balanceOf(student2.address);
-
-        expect(afterFrom).to.equal(beforeFrom - 10n);
-        expect(afterTo).to.equal(beforeTo + 10n);
-      });
-
-      it("Should revert transferFrom if recipient is not a registered student", async () => {
-        await expect(
-          campusCoin
-            .connect(attacker)
-            .transferFrom(student1.address, provider.address, "1")
-        ).to.be.revertedWith("Recipient must be a registered student");
-      });
+    it("Should revert transferFrom if recipient is not a registered student", async () => {
+      await expect(
+        campusCoin
+          .connect(spender)
+          .transferFrom(student1.address, provider.address, "1")
+      ).to.be.revertedWith("Recipient must be a registered student");
     });
   });
+
 
   describe("Service Provider management", () => {
     it("Should add and remove provider", async () => {
