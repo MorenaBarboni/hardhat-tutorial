@@ -120,7 +120,7 @@ describe("CampusCoin", function () {
       ).to.be.revertedWith("Recipient must be a registered student");
     });
 
-    it("Should transferFrom to a registered student when approved (exact delta)", async () => {
+    it("Should transferFrom to a registered student when approved", async () => {
       const beforeFrom = await campusCoin.balanceOf(student1.address);
       const beforeTo = await campusCoin.balanceOf(student2.address);
 
@@ -146,12 +146,9 @@ describe("CampusCoin", function () {
 
 
   describe("Service Provider management", () => {
+
     it("Should add and remove provider", async () => {
-      await campusCoin.addServiceProvider(
-        provider.address,
-        "Coffee Shop",
-        "Food"
-      );
+      await campusCoin.addServiceProvider(provider.address, "Coffee Shop", "Food");
       const sp = await campusCoin.serviceProviders(provider.address);
       expect(sp.name).to.equal("Coffee Shop");
       expect(sp.category).to.equal("Food");
@@ -164,12 +161,7 @@ describe("CampusCoin", function () {
 
     it("Should update provider", async () => {
       await campusCoin.addServiceProvider(provider.address, "Cafe", "Food");
-      await campusCoin.updateServiceProvider(
-        provider.address,
-        "Bookstore",
-        "Retail",
-        true
-      );
+      await campusCoin.updateServiceProvider(provider.address, "Bookstore", "Retail", true);
       const updated = await campusCoin.serviceProviders(provider.address);
       expect(updated.name).to.equal("Bookstore");
       expect(updated.category).to.equal("Retail");
@@ -183,20 +175,13 @@ describe("CampusCoin", function () {
     });
 
     it("Should only allow admin to manage service providers (add/remove/update)", async () => {
-      await expect(
-        campusCoin
-          .connect(student1)
-          .addServiceProvider(provider.address, "X", "Y")
+      await expect(campusCoin.connect(student1).addServiceProvider(provider.address, "X", "Y")
       ).to.be.revertedWith("Only admin can call this");
 
-      await expect(
-        campusCoin.connect(student1).removeServiceProvider(provider.address)
+      await expect(campusCoin.connect(student1).removeServiceProvider(provider.address)
       ).to.be.revertedWith("Only admin can call this");
 
-      await expect(
-        campusCoin
-          .connect(student1)
-          .updateServiceProvider(provider.address, "N", "C", true)
+      await expect(campusCoin.connect(student1).updateServiceProvider(provider.address, "N", "C", true)
       ).to.be.revertedWith("Only admin can call this");
     });
   });
