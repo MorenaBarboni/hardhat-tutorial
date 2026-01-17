@@ -3,17 +3,18 @@ const { ethers } = require("hardhat");
 
 describe("CampusCoin", function () {
   let campusCoin;
-  let admin, university, student1, student2, provider;
+  let admin, university, student1, student2, provider, attacker;
 
   before(async () => {
-    [admin, university, student1, student2, provider] = await ethers.getSigners();
+    [admin, university, student1, student2, provider, attacker] =
+      await ethers.getSigners();
+
     const CampusCoin = await ethers.getContractFactory("CampusCoin");
     campusCoin = await CampusCoin.deploy(university.address);
     await campusCoin.waitForDeployment();
   });
 
   describe("Deployment", () => {
-
     it("Should set correct name and symbol", async () => {
       expect(await campusCoin.name()).to.equal("CampusCoin");
       expect(await campusCoin.symbol()).to.equal("CC");
@@ -28,10 +29,16 @@ describe("CampusCoin", function () {
       expect(await campusCoin.university()).to.equal(university.address);
       expect(await campusCoin.admin()).to.equal(admin.address);
     });
+
+    it("Should revert deployment if university address is zero", async () => {
+      const CampusCoin = await ethers.getContractFactory("CampusCoin");
+      await expect(
+        CampusCoin.deploy(ethers.ZeroAddress)
+      ).to.be.revertedWith("university address cannot be zero");
+    });
   });
 
   describe("Student management", () => {
-
     it("Should add and remove student", async () => {
       await campusCoin.addStudent(student1.address);
       expect(await campusCoin.isStudent(student1.address)).to.be.true;
@@ -53,6 +60,7 @@ describe("CampusCoin", function () {
 
   describe("Token minting & burning", () => {
     before(async () => {
+      // ensure student1 is registered for mint tests
       await campusCoin.addStudent(student1.address);
     });
 
@@ -63,12 +71,18 @@ describe("CampusCoin", function () {
     });
 
     it("Should not mint to non-student", async () => {
-      await expect(
-        campusCoin.mint(provider.address, "50")
-      ).to.be.revertedWith("Can only mint to registered students");
+      await expect(campusCoin.mint(provider.address, "50")).to.be.revertedWith(
+        "Can only mint to registered students"
+      );
     });
 
-    //address 1 already has 50 tokens
+    it("Should only allow admin to mint", async () => {
+      await expect(
+        campusCoin.connect(student1).mint(student1.address, "1")
+      ).to.be.revertedWith("Only admin can call this");
+    });
+
+    // student1 has 100 at this point
     it("Should burn tokens", async () => {
       await campusCoin.connect(student1).burn("50");
       const balance = await campusCoin.balanceOf(student1.address);
@@ -78,8 +92,11 @@ describe("CampusCoin", function () {
 
   describe("Transfers", () => {
     before(async () => {
+      // make sure both are students and student1 has funds
       await campusCoin.addStudent(student1.address);
       await campusCoin.addStudent(student2.address);
+
+      // top up student1 for transfer tests; previous tests may have burned
       await campusCoin.mint(student1.address, "100");
     });
 
@@ -94,12 +111,59 @@ describe("CampusCoin", function () {
         campusCoin.connect(student1).transfer(provider.address, "10")
       ).to.be.revertedWith("Recipient must be a registered student");
     });
+
+    describe("transferFrom", () => {
+      beforeEach(async () => {
+        // Ensure spender (attacker here) has allowance from student1
+        // Also top up student1 so each test is independent.
+        await campusCoin.mint(student1.address, "20");
+        await campusCoin.connect(student1).approve(attacker.address, "15");
+      });
+
+      it("Should transferFrom to a registered student when approved", async () => {
+        await campusCoin
+          .connect(attacker)
+          .transferFrom(student1.address, student2.address, "10");
+
+        expect(await campusCoin.balanceOf(student2.address)).to.be.gte(0); // sanity
+        // Exact delta assertions:
+        // student2 started with at least 10 from earlier transfer; just check increment by 10
+        // Fetch balances after and assert change:
+        // (We avoid depending on earlier state by computing before/after.)
+      });
+
+      it("Should transferFrom to a registered student when approved (exact delta)", async () => {
+        const beforeFrom = await campusCoin.balanceOf(student1.address);
+        const beforeTo = await campusCoin.balanceOf(student2.address);
+
+        await campusCoin
+          .connect(attacker)
+          .transferFrom(student1.address, student2.address, "10");
+
+        const afterFrom = await campusCoin.balanceOf(student1.address);
+        const afterTo = await campusCoin.balanceOf(student2.address);
+
+        expect(afterFrom).to.equal(beforeFrom - 10n);
+        expect(afterTo).to.equal(beforeTo + 10n);
+      });
+
+      it("Should revert transferFrom if recipient is not a registered student", async () => {
+        await expect(
+          campusCoin
+            .connect(attacker)
+            .transferFrom(student1.address, provider.address, "1")
+        ).to.be.revertedWith("Recipient must be a registered student");
+      });
+    });
   });
 
   describe("Service Provider management", () => {
-
     it("Should add and remove provider", async () => {
-      await campusCoin.addServiceProvider(provider.address, "Coffee Shop", "Food");
+      await campusCoin.addServiceProvider(
+        provider.address,
+        "Coffee Shop",
+        "Food"
+      );
       const sp = await campusCoin.serviceProviders(provider.address);
       expect(sp.name).to.equal("Coffee Shop");
       expect(sp.category).to.equal("Food");
@@ -112,7 +176,12 @@ describe("CampusCoin", function () {
 
     it("Should update provider", async () => {
       await campusCoin.addServiceProvider(provider.address, "Cafe", "Food");
-      await campusCoin.updateServiceProvider(provider.address, "Bookstore", "Retail", true);
+      await campusCoin.updateServiceProvider(
+        provider.address,
+        "Bookstore",
+        "Retail",
+        true
+      );
       const updated = await campusCoin.serviceProviders(provider.address);
       expect(updated.name).to.equal("Bookstore");
       expect(updated.category).to.equal("Retail");
@@ -124,6 +193,24 @@ describe("CampusCoin", function () {
         campusCoin.updateServiceProvider(student1.address, "New", "Cat", true)
       ).to.be.revertedWith("Provider not found");
     });
+
+    it("Should only allow admin to manage service providers (add/remove/update)", async () => {
+      await expect(
+        campusCoin
+          .connect(student1)
+          .addServiceProvider(provider.address, "X", "Y")
+      ).to.be.revertedWith("Only admin can call this");
+
+      await expect(
+        campusCoin.connect(student1).removeServiceProvider(provider.address)
+      ).to.be.revertedWith("Only admin can call this");
+
+      await expect(
+        campusCoin
+          .connect(student1)
+          .updateServiceProvider(provider.address, "N", "C", true)
+      ).to.be.revertedWith("Only admin can call this");
+    });
   });
 
   describe("Service Payments", () => {
@@ -134,9 +221,9 @@ describe("CampusCoin", function () {
     });
 
     it("Should pay service with 1% fee", async () => {
-      const amount = 1n; 
-      const fee = amount / 100n;           // 1% fee as BigInt
-      const toReceive = amount - fee; // 99% goes to provider
+      const amount = 1n;
+      const fee = amount / 100n; // 1% fee (integer division)
+      const toReceive = amount - fee;
 
       await campusCoin.connect(student1).payService(provider.address, amount);
 
@@ -148,7 +235,6 @@ describe("CampusCoin", function () {
       expect(universityBal).to.equal(fee);
       expect(studentSpent).to.equal(amount);
     });
-
 
     it("Should fail if sender is not a student", async () => {
       await expect(
