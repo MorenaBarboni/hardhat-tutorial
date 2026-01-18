@@ -6,7 +6,7 @@ module.exports = {
       skipTests: [],
       testingFramework: "auto",
       minimalOperators: false,
-      randomSampling: false,
-      randomMutants: 100,
+      randomSampling: true,
+      randomMutants: 33,
       testingTimeOutInSec: 500  
 }
