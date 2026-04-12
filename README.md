@@ -23,5 +23,3 @@ Run the test suite with `npx hardhat test`
 ## Checking Coverage
 * Check code coverage with `npx hardhat coverage`
 * You can inspect the coverage report (`coverage/index.html`) with the `live-server` extension for VSCode
-
-## CampusCoin Project Structure
