@@ -22,8 +22,10 @@ describe("CampusCoin", function () {
 
     it("Should assign the total supply of tokens to the admin", async function () {
       const adminBalance = await campusCoin.balanceOf(admin.address);
-      expect(await campusCoin.totalSupply()).to.equal(adminBalance);
+      const totalSupply = await campusCoin.totalSupply();
+      expect(totalSupply).to.equal(adminBalance);
     });
+
 
     it("Should set university and admin correctly", async () => {
       expect(await campusCoin.university()).to.equal(university.address);
