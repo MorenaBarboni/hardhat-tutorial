@@ -40,10 +40,16 @@ describe("CampusCoin", function () {
   describe("Student management", () => {
 
     it("Should add and remove student", async () => {
-      expect(await campusCoin.addStudent(student1.address)).to.emit(campusCoin, "StudentAdded").withArgs(student1.address);
+
+      await expect(campusCoin.addStudent(student1.address))
+        .to.emit(campusCoin, "StudentAdded")
+        .withArgs(student1.address);
       expect(await campusCoin.isStudent(student1.address)).to.be.true;
 
-      expect(await campusCoin.removeStudent(student1.address)).to.emit(campusCoin, "StudentRemoved").withArgs(student1.address);
+      await expect(campusCoin.removeStudent(student1.address))
+        .to.emit(campusCoin, "StudentRemoved")
+        .withArgs(student1.address);
+
       expect(await campusCoin.isStudent(student1.address)).to.be.false;
     });
 
@@ -211,7 +217,9 @@ describe("CampusCoin", function () {
 
       //Track how much the student spent before
       const studenSpentBeforeTx1 = await campusCoin.totalSpent(student1.address);
-      await campusCoin.connect(student1).payService(provider.address, amount);
+
+      await expect(campusCoin.connect(student1).payService(provider.address, amount))
+        .to.emit(campusCoin, "ServicePaid");
 
       const providerBal = await campusCoin.balanceOf(provider.address);
       const universityBal = await campusCoin.balanceOf(university.address);
@@ -239,5 +247,4 @@ describe("CampusCoin", function () {
       ).to.be.revertedWith("Recipient must be an active service provider");
     });
   });
-
 });
